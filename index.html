@@ -1,0 +1,1248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NYOTA — National Youth Opportunities Towards Advancement</title>
+    <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800;900&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+    <style>
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --green: #1f7a4a; --green-light: #27a361; --green-pale: #e8f5ee;
+            --navy: #0f1f4b; --red: #c0392b; --gold: #e6b800;
+            --surface: #f2f6f3; --border: #d8e8de; --muted: #6b7280;
+            --shadow: 0 4px 24px rgba(15,31,75,0.10);
+            --shadow-lg: 0 12px 48px rgba(15,31,75,0.18);
+        }
+        body { font-family: 'DM Sans', sans-serif; background: var(--surface); color: #111827; min-height: 100vh; }
+        h1,h2,h3,.logo-text,.balance-amount { font-family: 'Sora', sans-serif; }
+
+        .layer { display: none; min-height: 100vh; }
+        .layer.active { display: block; }
+
+        /* NAVBAR */
+        .navbar {
+            background: var(--navy); padding: 0 28px; height: 64px;
+            display: flex; justify-content: space-between; align-items: center;
+            position: sticky; top: 0; z-index: 200;
+            box-shadow: 0 2px 16px rgba(0,0,0,0.25);
+        }
+        .logo-nav { display: flex; align-items: center; gap: 10px; cursor: pointer; }
+        .logo-icon {
+            width: 38px; height: 38px;
+            background: linear-gradient(135deg, var(--green), var(--green-light));
+            border-radius: 10px; display: flex; align-items: center; justify-content: center;
+            font-size: 19px; box-shadow: 0 2px 8px rgba(31,122,74,0.4);
+        }
+        .logo-text { font-size: 20px; font-weight: 900; color: white; letter-spacing: 1px; }
+        .navbar-right { display: flex; align-items: center; gap: 12px; }
+        .nav-btn {
+            padding: 8px 20px; border: 1.5px solid rgba(255,255,255,0.3);
+            border-radius: 8px; background: transparent; color: white;
+            font-family: 'DM Sans', sans-serif; font-weight: 600; font-size: 14px;
+            cursor: pointer; transition: all 0.2s;
+        }
+        .nav-btn:hover { background: rgba(255,255,255,0.1); }
+        .nav-btn.primary { background: var(--green); border-color: var(--green); }
+
+        /* NOTIFICATION BELL */
+        .notif-wrap { position: relative; cursor: pointer; }
+        .notif-bell {
+            width: 38px; height: 38px; background: rgba(255,255,255,0.1);
+            border-radius: 10px; display: flex; align-items: center; justify-content: center;
+            font-size: 18px; transition: background 0.2s;
+        }
+        .notif-bell:hover { background: rgba(255,255,255,0.2); }
+        .notif-badge {
+            position: absolute; top: -4px; right: -4px; background: var(--red);
+            color: white; font-size: 9px; font-weight: 800; width: 17px; height: 17px;
+            border-radius: 50%; display: flex; align-items: center; justify-content: center;
+            border: 2px solid var(--navy);
+        }
+        .notif-dropdown {
+            display: none; position: absolute; top: 50px; right: 0;
+            background: white; border-radius: 16px; box-shadow: var(--shadow-lg);
+            width: 310px; overflow: hidden; z-index: 300; border: 1px solid var(--border);
+        }
+        .notif-dropdown.open { display: block; animation: fadeDown 0.2s; }
+        @keyframes fadeDown { from { opacity:0; transform:translateY(-8px); } to { opacity:1; } }
+        .notif-header {
+            padding: 14px 18px; font-family: 'Sora', sans-serif; font-weight: 700; font-size: 14px;
+            border-bottom: 1px solid var(--border);
+        }
+        .notif-item {
+            padding: 13px 18px; border-bottom: 1px solid #f0f0f0;
+            display: flex; gap: 12px; align-items: flex-start;
+        }
+        .notif-dot { width: 8px; height: 8px; background: var(--green); border-radius: 50%; margin-top: 5px; flex-shrink: 0; }
+        .notif-text { font-size: 13px; line-height: 1.5; color: #444; }
+
+        /* CONTAINER & CARDS */
+        .container { max-width: 1100px; margin: 0 auto; padding: 36px 20px; }
+        .container-sm { max-width: 580px; margin: 0 auto; padding: 36px 20px; }
+        .card {
+            background: white; border-radius: 20px; padding: 32px;
+            box-shadow: var(--shadow); margin-bottom: 24px; border: 1px solid var(--border);
+        }
+        .card-title { font-size: 26px; font-weight: 800; color: var(--navy); margin-bottom: 24px; }
+
+        /* FORMS */
+        .form-group { margin-bottom: 18px; }
+        .form-group label { display: block; margin-bottom: 7px; font-weight: 600; font-size: 13px; color: #374151; }
+        .form-group input, .form-group select {
+            width: 100%; padding: 13px 16px; border: 1.5px solid var(--border);
+            border-radius: 10px; font-size: 15px; font-family: 'DM Sans', sans-serif;
+            background: #fafafa; transition: border-color 0.2s;
+        }
+        .form-group input:focus, .form-group select:focus {
+            outline: none; border-color: var(--green); background: white;
+            box-shadow: 0 0 0 3px rgba(31,122,74,0.1);
+        }
+        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+        .btn-submit {
+            width: 100%; padding: 16px; background: var(--green); color: white;
+            border: none; border-radius: 12px; font-size: 16px; font-weight: 700;
+            font-family: 'Sora', sans-serif; cursor: pointer; transition: all 0.2s;
+            letter-spacing: 0.5px;
+        }
+        .btn-submit:hover { background: var(--green-light); transform: translateY(-1px); box-shadow: 0 6px 20px rgba(31,122,74,0.3); }
+        .form-link { text-align: center; margin-top: 16px; font-size: 14px; color: var(--muted); }
+        .form-link a { color: var(--green); font-weight: 600; cursor: pointer; text-decoration: none; }
+
+        /* BALANCE CARD */
+        .balance-card {
+            background: linear-gradient(135deg, var(--navy) 0%, #1a3a7a 100%);
+            border-radius: 20px; padding: 32px; color: white; margin-bottom: 24px;
+            position: relative; overflow: hidden;
+        }
+        .balance-card::before {
+            content: ''; position: absolute; top: -40px; right: -40px;
+            width: 200px; height: 200px; background: rgba(255,255,255,0.05);
+            border-radius: 50%;
+        }
+        .balance-card::after {
+            content: ''; position: absolute; bottom: -60px; right: 60px;
+            width: 150px; height: 150px; background: rgba(31,122,74,0.2);
+            border-radius: 50%;
+        }
+        .balance-label { font-size: 13px; opacity: 0.7; text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 8px; }
+        .balance-amount { font-size: 48px; font-weight: 900; line-height: 1; margin-bottom: 6px; }
+        .balance-change { font-size: 13px; color: #6ee7a0; font-weight: 600; }
+        .balance-meta { display: flex; gap: 32px; margin-top: 24px; padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.15); }
+        .balance-meta-item { }
+        .balance-meta-label { font-size: 11px; opacity: 0.6; text-transform: uppercase; letter-spacing: 1px; }
+        .balance-meta-val { font-size: 16px; font-weight: 700; margin-top: 3px; }
+
+        /* STATS GRID */
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; margin-bottom: 24px; }
+        .stat-card {
+            background: white; border-radius: 16px; padding: 20px 22px;
+            border: 1px solid var(--border); box-shadow: var(--shadow);
+        }
+        .stat-icon { font-size: 24px; margin-bottom: 10px; }
+        .stat-val { font-family: 'Sora', sans-serif; font-size: 22px; font-weight: 800; color: var(--navy); }
+        .stat-label { font-size: 12px; color: var(--muted); margin-top: 3px; }
+
+        /* ACTION GRID */
+        .action-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 14px; margin-bottom: 24px; }
+        .action-btn {
+            padding: 22px 14px; border: none; border-radius: 16px;
+            font-family: 'Sora', sans-serif; font-weight: 700; font-size: 14px;
+            cursor: pointer; color: white; display: flex; flex-direction: column;
+            align-items: center; gap: 8px; transition: all 0.2s;
+        }
+        .action-btn:hover { transform: translateY(-3px); box-shadow: 0 8px 24px rgba(0,0,0,0.2); }
+        .action-btn span { font-size: 26px; }
+
+        /* PLAN CARDS */
+        .plans-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin: 20px 0; }
+        .plan-card {
+            border: 2px solid var(--border); border-radius: 16px; padding: 22px;
+            cursor: pointer; transition: all 0.2s; position: relative; background: white;
+        }
+        .plan-card:hover { border-color: var(--green); box-shadow: 0 4px 20px rgba(31,122,74,0.15); }
+        .plan-card.selected { border-color: var(--green); background: var(--green-pale); }
+        .plan-card.popular::before {
+            content: 'POPULAR'; position: absolute; top: -10px; right: 14px;
+            background: var(--gold); color: #333; font-size: 9px; font-weight: 800;
+            padding: 3px 10px; border-radius: 20px; letter-spacing: 1px;
+        }
+        .plan-name { font-size: 16px; font-weight: 800; color: var(--navy); margin-bottom: 4px; }
+        .plan-rate { font-size: 30px; font-weight: 900; color: var(--green); line-height: 1; }
+        .plan-period { font-size: 12px; color: var(--muted); margin-bottom: 10px; }
+        .plan-min { font-size: 12px; color: #555; background: #f5f5f5; padding: 4px 10px; border-radius: 20px; display: inline-block; }
+
+        /* TRANSACTION TABLE */
+        .tx-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+        .tx-table th { padding: 12px 14px; text-align: left; background: #f7faf8; color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: 1px; font-weight: 700; }
+        .tx-table td { padding: 14px 14px; border-bottom: 1px solid #f0f0f0; }
+        .tx-table tr:last-child td { border-bottom: none; }
+        .tx-table tr:hover td { background: #fafafa; }
+        .tx-status {
+            display: inline-flex; align-items: center; gap: 5px;
+            padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 700;
+        }
+        .tx-status.success { background: #e6f4ee; color: var(--green); }
+        .tx-status.pending { background: #fff8e1; color: #b7791f; }
+
+        /* REFERRAL */
+        .ref-code-box {
+            background: var(--green-pale); border: 2px dashed var(--green);
+            border-radius: 14px; padding: 22px; text-align: center; margin: 18px 0;
+        }
+        .ref-code { font-family: 'Sora', sans-serif; font-size: 32px; font-weight: 900; color: var(--green); letter-spacing: 5px; }
+        .ref-link { background: #f0f0f0; border-radius: 10px; padding: 12px 16px; font-size: 13px; color: #555; word-break: break-all; margin: 10px 0; }
+        .ref-stats { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; margin-top: 24px; }
+        .ref-stat { background: #f7faf8; border-radius: 12px; padding: 18px; text-align: center; }
+        .ref-stat-val { font-family: 'Sora', sans-serif; font-size: 24px; font-weight: 800; color: var(--navy); }
+        .ref-stat-label { font-size: 12px; color: var(--muted); margin-top: 4px; }
+
+        /* PROFILE */
+        .profile-avatar {
+            width: 80px; height: 80px; border-radius: 50%;
+            background: linear-gradient(135deg, var(--green), var(--navy));
+            display: flex; align-items: center; justify-content: center;
+            font-size: 32px; font-weight: 900; color: white;
+            font-family: 'Sora', sans-serif; margin: 0 auto 16px;
+        }
+        .profile-badge {
+            display: inline-flex; align-items: center; gap: 6px;
+            background: var(--green-pale); color: var(--green);
+            padding: 5px 14px; border-radius: 20px; font-size: 13px; font-weight: 700;
+            margin: 8px auto;
+        }
+        .info-row {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 14px 0; border-bottom: 1px solid var(--border);
+            font-size: 14px;
+        }
+        .info-row:last-child { border-bottom: none; }
+        .info-label { color: var(--muted); font-weight: 500; }
+        .info-val { font-weight: 600; color: var(--text); }
+
+        /* M-PESA POPUP */
+        .stk-popup {
+            display: none; position: fixed; inset: 0;
+            background: rgba(15,31,75,0.85); z-index: 10000;
+            justify-content: center; align-items: center; backdrop-filter: blur(4px);
+        }
+        .stk-popup.active { display: flex; }
+        .stk-content {
+            background: white; border-radius: 24px; padding: 40px 36px;
+            max-width: 420px; width: 90%; text-align: center;
+            box-shadow: 0 24px 80px rgba(0,0,0,0.4); animation: popIn 0.3s;
+        }
+        @keyframes popIn { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+        .stk-icon { font-size: 64px; margin-bottom: 16px; animation: pulse 2s infinite; }
+        @keyframes pulse { 0%,100%{transform:scale(1)} 50%{transform:scale(1.08)} }
+        .stk-title { font-family: 'Sora', sans-serif; font-size: 22px; font-weight: 800; color: var(--navy); margin-bottom: 10px; }
+        .stk-msg { font-size: 15px; color: #555; line-height: 1.6; margin-bottom: 16px; }
+        .stk-amount { font-family: 'Sora', sans-serif; font-size: 42px; font-weight: 900; color: var(--green); margin: 12px 0; }
+        .stk-spinner {
+            border: 4px solid #eee; border-top: 4px solid var(--green);
+            border-radius: 50%; width: 44px; height: 44px;
+            animation: spin 0.9s linear infinite; margin: 16px auto 8px;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .stk-note { font-size: 13px; color: var(--muted); margin-top: 10px; }
+
+        /* TOAST */
+        .toast {
+            position: fixed; top: 80px; right: 24px;
+            background: white; border-left: 4px solid var(--green);
+            padding: 16px 20px; border-radius: 12px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.15);
+            z-index: 10001; display: none; font-weight: 600; font-size: 14px;
+            max-width: 360px; line-height: 1.5;
+        }
+        .toast.error { border-left-color: var(--red); }
+        .toast.show { display: block; animation: slideIn 0.35s; }
+        @keyframes slideIn { from { transform: translateX(400px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+
+        /* WELCOME / LANDING */
+        .hero {
+            min-height: 100vh;
+            background: linear-gradient(160deg, var(--navy) 0%, #162a5e 55%, #1a5c38 100%);
+            display: flex; align-items: center; justify-content: center;
+            padding: 40px 20px; position: relative; overflow: hidden;
+        }
+        .hero::before {
+            content: ''; position: absolute; top: -100px; right: -100px;
+            width: 500px; height: 500px; background: rgba(31,122,74,0.12);
+            border-radius: 50%; pointer-events: none;
+        }
+        .hero-card {
+            background: white; border-radius: 28px; padding: 48px 40px;
+            max-width: 720px; width: 100%; text-align: center;
+            box-shadow: 0 24px 80px rgba(0,0,0,0.3); position: relative;
+        }
+        .hero-logo { font-family: 'Sora', sans-serif; font-size: 68px; font-weight: 900; color: var(--green); letter-spacing: 4px; line-height: 1; }
+        .hero-sub { font-size: 13px; color: var(--muted); text-transform: uppercase; letter-spacing: 3px; margin-top: 4px; margin-bottom: 28px; }
+        .hero-headline { font-family: 'Sora', sans-serif; font-size: 28px; font-weight: 800; color: var(--navy); line-height: 1.3; margin-bottom: 6px; }
+        .hero-tagline { font-size: 17px; color: var(--muted); font-style: italic; margin-bottom: 28px; }
+        .phase-badge {
+            display: inline-block; background: var(--gold); color: var(--navy);
+            padding: 10px 36px; border-radius: 30px; font-family: 'Sora', sans-serif;
+            font-size: 20px; font-weight: 900; letter-spacing: 1px; margin-bottom: 32px;
+        }
+        .hero-cta {
+            width: 100%; background: var(--navy); color: white; padding: 22px;
+            border: none; border-radius: 16px; font-family: 'Sora', sans-serif;
+            font-size: 24px; font-weight: 900; cursor: pointer; transition: all 0.2s;
+            letter-spacing: 1px;
+        }
+        .hero-cta:hover { background: #0d1b42; transform: translateY(-2px); box-shadow: 0 10px 30px rgba(15,31,75,0.3); }
+        .trust-bar { display: flex; justify-content: center; gap: 12px; flex-wrap: wrap; margin-top: 20px; }
+        .trust-badge {
+            display: inline-flex; align-items: center; gap: 5px;
+            background: var(--green-pale); color: var(--green);
+            padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: 700;
+        }
+        .stats-trust { display: grid; grid-template-columns: repeat(3,1fr); gap: 12px; margin: 28px 0; }
+        .stats-trust-item { background: var(--surface); border-radius: 14px; padding: 16px 10px; }
+        .stats-trust-val { font-family: 'Sora', sans-serif; font-size: 22px; font-weight: 900; color: var(--green); }
+        .stats-trust-label { font-size: 11px; color: var(--muted); margin-top: 3px; }
+
+        /* KYC STEP */
+        .step-indicator {
+            display: flex; align-items: center; gap: 8px; margin-bottom: 28px; justify-content: center;
+        }
+        .step { width: 30px; height: 30px; border-radius: 50%; background: var(--border); color: var(--muted); font-weight: 700; font-size: 13px; display: flex; align-items: center; justify-content: center; font-family: 'Sora', sans-serif; }
+        .step.active { background: var(--green); color: white; }
+        .step.done { background: var(--green-pale); color: var(--green); }
+        .step-line { flex: 1; height: 2px; background: var(--border); max-width: 50px; }
+
+        /* BOTTOM NAV (mobile) */
+        .bottom-nav {
+            display: none; position: fixed; bottom: 0; left: 0; right: 0;
+            background: white; border-top: 1px solid var(--border);
+            padding: 8px 0 12px; z-index: 150;
+            box-shadow: 0 -4px 20px rgba(0,0,0,0.08);
+        }
+        .bottom-nav-inner { display: flex; justify-content: space-around; }
+        .bnav-btn {
+            display: flex; flex-direction: column; align-items: center; gap: 3px;
+            background: none; border: none; cursor: pointer; padding: 6px 16px;
+            color: var(--muted); font-size: 10px; font-weight: 600; font-family: 'DM Sans', sans-serif;
+            transition: color 0.2s;
+        }
+        .bnav-btn span { font-size: 22px; }
+        .bnav-btn.active { color: var(--green); }
+
+        @media (max-width: 640px) {
+            .bottom-nav { display: block; }
+            .container, .container-sm { padding-bottom: 80px; }
+            .form-row { grid-template-columns: 1fr; }
+            .balance-amount { font-size: 36px; }
+            .hero-logo { font-size: 48px; }
+            .hero-cta { font-size: 18px; }
+            .hero-card { padding: 32px 20px; }
+            .ref-stats { grid-template-columns: 1fr 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+<div id="toast" class="toast"></div>
+
+<!-- STK POPUP -->
+<div id="stkPopup" class="stk-popup">
+    <div class="stk-content">
+        <div class="stk-icon">📱</div>
+        <div class="stk-title">M-Pesa Payment Request</div>
+        <div class="stk-msg" id="stkMessage">Check your phone for the M-Pesa prompt</div>
+        <div class="stk-amount" id="stkAmount">Ksh 0</div>
+        <div class="stk-spinner"></div>
+        <div class="stk-note">Enter your M-Pesa PIN on your phone to confirm</div>
+    </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     WELCOME / LANDING
+════════════════════════════════════════════ -->
+<div id="welcomeLayer" class="layer active">
+    <div class="hero">
+        <div class="hero-card">
+            <div class="hero-logo">NYOTA</div>
+            <div class="hero-sub">National Youth Opportunities Towards Advancement</div>
+
+            <div class="stats-trust">
+                <div class="stats-trust-item">
+                    <div class="stats-trust-val">14,823</div>
+                    <div class="stats-trust-label">Active Members</div>
+                </div>
+                <div class="stats-trust-item">
+                    <div class="stats-trust-val">Ksh 42M+</div>
+                    <div class="stats-trust-label">Total Invested</div>
+                </div>
+                <div class="stats-trust-item">
+                    <div class="stats-trust-val">98.4%</div>
+                    <div class="stats-trust-label">Payout Rate</div>
+                </div>
+            </div>
+
+            <div class="hero-headline">Invest Today. Grow Tomorrow.</div>
+            <div class="hero-tagline">Kuza, Imarisha, Endeza Vijana!</div>
+            <div class="phase-badge">🚀 SECOND PHASE — NOW OPEN</div>
+
+            <button class="hero-cta" onclick="showLayer('signupLayer')">APPLY NOW — JOIN FREE</button>
+            <div class="form-link" style="margin-top:14px;">
+                Already a member? <a onclick="showLayer('loginLayer')">Login here</a>
+            </div>
+            <div class="trust-bar" style="margin-top:18px;">
+                <span class="trust-badge">🔒 SSL Secured</span>
+                <span class="trust-badge">✅ M-Pesa Verified</span>
+                <span class="trust-badge">🏛️ CMA Compliant</span>
+                <span class="trust-badge">🇰🇪 Kenya Registered</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     SIGNUP
+════════════════════════════════════════════ -->
+<div id="signupLayer" class="layer">
+    <nav class="navbar">
+        <div class="logo-nav" onclick="showLayer('welcomeLayer')">
+            <div class="logo-icon">🦅</div>
+            <div><div class="logo-text">NYOTA</div></div>
+        </div>
+        <div class="navbar-right">
+            <button class="nav-btn" onclick="showLayer('loginLayer')">Login</button>
+        </div>
+    </nav>
+    <div class="container-sm">
+        <div class="card">
+            <div class="step-indicator">
+                <div class="step active" id="step1">1</div>
+                <div class="step-line"></div>
+                <div class="step" id="step2">2</div>
+                <div class="step-line"></div>
+                <div class="step" id="step3">✓</div>
+            </div>
+            <h2 class="card-title" style="text-align:center;">Create Your Account</h2>
+            <form onsubmit="return handleSignup(event)">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Full Name</label>
+                        <input type="text" id="signupName" required placeholder="John Doe">
+                    </div>
+                    <div class="form-group">
+                        <label>ID Number</label>
+                        <input type="text" id="signupID" required placeholder="National ID">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>M-Pesa Phone Number</label>
+                    <input type="tel" id="signupPhone" required placeholder="254712345678" pattern="254[0-9]{9}">
+                    <small style="color:var(--muted);font-size:12px;">Format: 254712345678</small>
+                </div>
+                <div class="form-group">
+                    <label>Email Address</label>
+                    <input type="email" id="signupEmail" required placeholder="you@example.com">
+                </div>
+                <div class="form-group">
+                    <label>Password</label>
+                    <input type="password" id="signupPassword" required placeholder="Min 6 characters" oninput="checkStrength(this.value)">
+                    <div id="strengthBar" style="height:4px;border-radius:4px;background:#eee;margin-top:6px;transition:all 0.3s;">
+                        <div id="strengthFill" style="height:100%;border-radius:4px;width:0%;transition:all 0.3s;"></div>
+                    </div>
+                    <small id="strengthLabel" style="font-size:11px;color:var(--muted);"></small>
+                </div>
+                <div class="form-group">
+                    <label>Referral Code (Optional)</label>
+                    <input type="text" id="signupRef" placeholder="e.g. NYT-1234">
+                </div>
+                <div class="form-group">
+                    <label>Select Registration Package</label>
+                    <div class="plans-grid">
+                        <div class="plan-card" onclick="selectPackage(1000, this)">
+                            <div class="plan-name">Starter</div>
+                            <div class="plan-rate">8%</div>
+                            <div class="plan-period">monthly returns</div>
+                            <div class="plan-min">Ksh 1,000</div>
+                        </div>
+                        <div class="plan-card popular" onclick="selectPackage(2000, this)">
+                            <div class="plan-name">Premium</div>
+                            <div class="plan-rate">12%</div>
+                            <div class="plan-period">monthly returns</div>
+                            <div class="plan-min">Ksh 2,000</div>
+                        </div>
+                        <div class="plan-card" onclick="selectPackage(5000, this)">
+                            <div class="plan-name">Elite</div>
+                            <div class="plan-rate">15%</div>
+                            <div class="plan-period">monthly returns</div>
+                            <div class="plan-min">Ksh 5,000</div>
+                        </div>
+                    </div>
+                    <input type="hidden" id="signupPackage">
+                </div>
+                <button type="submit" class="btn-submit">Register & Pay with M-Pesa 💳</button>
+            </form>
+            <div class="form-link">Already have an account? <a onclick="showLayer('loginLayer')">Login</a></div>
+        </div>
+    </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     LOGIN
+════════════════════════════════════════════ -->
+<div id="loginLayer" class="layer">
+    <nav class="navbar">
+        <div class="logo-nav" onclick="showLayer('welcomeLayer')">
+            <div class="logo-icon">🦅</div>
+            <div><div class="logo-text">NYOTA</div></div>
+        </div>
+        <div class="navbar-right">
+            <button class="nav-btn primary" onclick="showLayer('signupLayer')">Sign Up</button>
+        </div>
+    </nav>
+    <div class="container-sm">
+        <div class="card">
+            <h2 class="card-title" style="text-align:center;">Welcome Back 👋</h2>
+            <form onsubmit="return handleLogin(event)">
+                <div class="form-group">
+                    <label>Phone Number</label>
+                    <input type="tel" id="loginPhone" required placeholder="254712345678">
+                </div>
+                <div class="form-group">
+                    <label>Password</label>
+                    <input type="password" id="loginPassword" required placeholder="Your password">
+                </div>
+                <button type="submit" class="btn-submit">Login to Dashboard</button>
+            </form>
+            <div class="form-link" style="margin-top:14px;">No account? <a onclick="showLayer('signupLayer')">Register here</a></div>
+        </div>
+    </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     DASHBOARD
+════════════════════════════════════════════ -->
+<div id="dashboardLayer" class="layer">
+    <nav class="navbar">
+        <div class="logo-nav">
+            <div class="logo-icon">🦅</div>
+            <div><div class="logo-text">NYOTA</div></div>
+        </div>
+        <div class="navbar-right">
+            <div class="notif-wrap" onclick="toggleNotif()">
+                <div class="notif-bell">🔔</div>
+                <div class="notif-badge" id="notifBadge">3</div>
+                <div class="notif-dropdown" id="notifDropdown">
+                    <div class="notif-header">Notifications</div>
+                    <div class="notif-item">
+                        <div class="notif-dot"></div>
+                        <div class="notif-text">Your investment is actively earning returns. Keep growing! 🚀</div>
+                    </div>
+                    <div class="notif-item">
+                        <div class="notif-dot"></div>
+                        <div class="notif-text">Refer a friend and earn Ksh 500 instantly. Share your code now!</div>
+                    </div>
+                    <div class="notif-item">
+                        <div class="notif-dot"></div>
+                        <div class="notif-text">Phase 2 is live — upgrade your plan to Elite for 15% monthly.</div>
+                    </div>
+                </div>
+            </div>
+            <button class="nav-btn" onclick="logout()">Logout</button>
+        </div>
+    </nav>
+
+    <div class="container">
+        <h2 style="font-family:'Sora',sans-serif; font-size:26px; font-weight:800; margin-bottom:20px;">
+            Habari, <span id="userName">Youth</span>! 👋
+        </h2>
+
+        <!-- Balance -->
+        <div class="balance-card">
+            <div class="balance-label">Total Portfolio Value</div>
+            <div class="balance-amount" id="balance">Ksh 0</div>
+            <div class="balance-change" id="balanceChange">↑ +0% this month</div>
+            <div class="balance-meta">
+                <div class="balance-meta-item">
+                    <div class="balance-meta-label">Active Plan</div>
+                    <div class="balance-meta-val" id="dashPlan">—</div>
+                </div>
+                <div class="balance-meta-item">
+                    <div class="balance-meta-label">Monthly Return</div>
+                    <div class="balance-meta-val" id="dashReturn">—</div>
+                </div>
+                <div class="balance-meta-item">
+                    <div class="balance-meta-label">Member Since</div>
+                    <div class="balance-meta-val" id="dashSince">—</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Stats -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon">💰</div>
+                <div class="stat-val" id="totalInvested">Ksh 0</div>
+                <div class="stat-label">Total Invested</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">📈</div>
+                <div class="stat-val" id="totalReturns">Ksh 0</div>
+                <div class="stat-label">Total Returns</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">👥</div>
+                <div class="stat-val" id="totalReferrals">0</div>
+                <div class="stat-label">Referrals</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">🎁</div>
+                <div class="stat-val" id="refBonus">Ksh 0</div>
+                <div class="stat-label">Referral Bonus</div>
+            </div>
+        </div>
+
+        <!-- Actions -->
+        <div class="action-grid">
+            <button class="action-btn" style="background:var(--green);" onclick="showLayer('investLayer')">
+                <span>💰</span> Invest
+            </button>
+            <button class="action-btn" style="background:#0066CC;" onclick="showLayer('withdrawLayer')">
+                <span>💸</span> Withdraw
+            </button>
+            <button class="action-btn" style="background:#7c3aed;" onclick="showLayer('referralLayer')">
+                <span>🎁</span> Referrals
+            </button>
+            <button class="action-btn" style="background:#b45309;" onclick="showLayer('profileLayer')">
+                <span>👤</span> Profile
+            </button>
+        </div>
+
+        <!-- Portfolio Chart -->
+        <div class="card">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+                <h3 style="font-family:'Sora',sans-serif;font-size:18px;font-weight:800;color:var(--navy);">Portfolio Growth</h3>
+                <div style="display:flex;gap:8px;">
+                    <button onclick="setChartRange('1M')" id="btn1M" style="padding:5px 12px;border:1.5px solid var(--green);border-radius:6px;background:var(--green);color:white;font-size:12px;font-weight:700;cursor:pointer;">1M</button>
+                    <button onclick="setChartRange('3M')" id="btn3M" style="padding:5px 12px;border:1.5px solid var(--border);border-radius:6px;background:white;color:var(--muted);font-size:12px;font-weight:700;cursor:pointer;">3M</button>
+                    <button onclick="setChartRange('6M')" id="btn6M" style="padding:5px 12px;border:1.5px solid var(--border);border-radius:6px;background:white;color:var(--muted);font-size:12px;font-weight:700;cursor:pointer;">6M</button>
+                </div>
+            </div>
+            <canvas id="portfolioChart" height="90"></canvas>
+        </div>
+
+        <!-- Transaction History -->
+        <div class="card">
+            <h3 style="font-family:'Sora',sans-serif;font-size:18px;font-weight:800;color:var(--navy);margin-bottom:20px;">Transaction History</h3>
+            <div style="overflow-x:auto;">
+                <table class="tx-table">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Type</th>
+                            <th>Amount</th>
+                            <th>TX ID</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="txTableBody">
+                        <tr><td colspan="5" style="text-align:center;padding:24px;color:var(--muted);">No transactions yet</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bottom Nav -->
+    <nav class="bottom-nav">
+        <div class="bottom-nav-inner">
+            <button class="bnav-btn active" onclick="showLayer('dashboardLayer')"><span>🏠</span>Home</button>
+            <button class="bnav-btn" onclick="showLayer('investLayer')"><span>💰</span>Invest</button>
+            <button class="bnav-btn" onclick="showLayer('withdrawLayer')"><span>💸</span>Withdraw</button>
+            <button class="bnav-btn" onclick="showLayer('referralLayer')"><span>🎁</span>Refer</button>
+            <button class="bnav-btn" onclick="showLayer('profileLayer')"><span>👤</span>Profile</button>
+        </div>
+    </nav>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     INVEST
+════════════════════════════════════════════ -->
+<div id="investLayer" class="layer">
+    <nav class="navbar">
+        <div class="logo-nav" onclick="showLayer('dashboardLayer')">
+            <div class="logo-icon">🦅</div>
+            <div><div class="logo-text">NYOTA</div></div>
+        </div>
+        <button class="nav-btn" onclick="showLayer('dashboardLayer')">← Back</button>
+    </nav>
+    <div class="container-sm">
+        <div class="card">
+            <h2 class="card-title">Make an Investment</h2>
+            <form onsubmit="return handleInvest(event)">
+                <div class="form-group">
+                    <label>Choose Investment Plan</label>
+                    <div class="plans-grid">
+                        <div class="plan-card" onclick="selectInvestPlan('starter', 8, this)">
+                            <div class="plan-name">Starter</div>
+                            <div class="plan-rate">8%</div>
+                            <div class="plan-period">monthly returns</div>
+                            <div class="plan-min">Min Ksh 1,000</div>
+                        </div>
+                        <div class="plan-card popular" onclick="selectInvestPlan('premium', 12, this)">
+                            <div class="plan-name">Premium</div>
+                            <div class="plan-rate">12%</div>
+                            <div class="plan-period">monthly returns</div>
+                            <div class="plan-min">Min Ksh 2,000</div>
+                        </div>
+                        <div class="plan-card" onclick="selectInvestPlan('elite', 15, this)">
+                            <div class="plan-name">Elite</div>
+                            <div class="plan-rate">15%</div>
+                            <div class="plan-period">monthly returns</div>
+                            <div class="plan-min">Min Ksh 5,000</div>
+                        </div>
+                    </div>
+                    <input type="hidden" id="investPlan">
+                    <input type="hidden" id="investRate">
+                </div>
+                <div class="form-group">
+                    <label>Investment Amount (Ksh)</label>
+                    <input type="number" id="investAmount" min="1000" step="100" required placeholder="e.g. 5,000">
+                </div>
+                <div id="investProjection" style="background:var(--green-pale);border-radius:12px;padding:16px;margin-bottom:18px;display:none;">
+                    <div style="font-size:13px;color:var(--muted);margin-bottom:6px;">Projected Monthly Return</div>
+                    <div id="projectedReturn" style="font-family:'Sora',sans-serif;font-size:26px;font-weight:900;color:var(--green);"></div>
+                </div>
+                <button type="submit" class="btn-submit">Pay with M-Pesa 💳</button>
+            </form>
+        </div>
+    </div>
+    <nav class="bottom-nav">
+        <div class="bottom-nav-inner">
+            <button class="bnav-btn" onclick="showLayer('dashboardLayer')"><span>🏠</span>Home</button>
+            <button class="bnav-btn active" onclick="showLayer('investLayer')"><span>💰</span>Invest</button>
+            <button class="bnav-btn" onclick="showLayer('withdrawLayer')"><span>💸</span>Withdraw</button>
+            <button class="bnav-btn" onclick="showLayer('referralLayer')"><span>🎁</span>Refer</button>
+            <button class="bnav-btn" onclick="showLayer('profileLayer')"><span>👤</span>Profile</button>
+        </div>
+    </nav>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     WITHDRAW
+════════════════════════════════════════════ -->
+<div id="withdrawLayer" class="layer">
+    <nav class="navbar">
+        <div class="logo-nav" onclick="showLayer('dashboardLayer')">
+            <div class="logo-icon">🦅</div>
+            <div><div class="logo-text">NYOTA</div></div>
+        </div>
+        <button class="nav-btn" onclick="showLayer('dashboardLayer')">← Back</button>
+    </nav>
+    <div class="container-sm">
+        <div class="card">
+            <h2 class="card-title">Request Withdrawal</h2>
+            <div style="background:#fff8e1;border-radius:12px;padding:14px 16px;margin-bottom:22px;font-size:13px;color:#92610a;border:1px solid #f0d060;">
+                ⏱️ Withdrawals are processed within <strong>24 hours</strong>. Minimum withdrawal is Ksh 500.
+            </div>
+            <form onsubmit="return handleWithdraw(event)">
+                <div class="form-group">
+                    <label>Available Balance</label>
+                    <input type="text" id="withdrawBalance" readonly style="background:#f5f5f5;color:var(--green);font-weight:700;">
+                </div>
+                <div class="form-group">
+                    <label>Withdrawal Amount (Ksh)</label>
+                    <input type="number" id="withdrawAmount" min="500" required placeholder="e.g. 2,000">
+                </div>
+                <div class="form-group">
+                    <label>M-Pesa Number</label>
+                    <input type="tel" id="withdrawPhone" placeholder="254712345678" required>
+                </div>
+                <button type="submit" class="btn-submit">Request Withdrawal</button>
+            </form>
+        </div>
+    </div>
+    <nav class="bottom-nav">
+        <div class="bottom-nav-inner">
+            <button class="bnav-btn" onclick="showLayer('dashboardLayer')"><span>🏠</span>Home</button>
+            <button class="bnav-btn" onclick="showLayer('investLayer')"><span>💰</span>Invest</button>
+            <button class="bnav-btn active" onclick="showLayer('withdrawLayer')"><span>💸</span>Withdraw</button>
+            <button class="bnav-btn" onclick="showLayer('referralLayer')"><span>🎁</span>Refer</button>
+            <button class="bnav-btn" onclick="showLayer('profileLayer')"><span>👤</span>Profile</button>
+        </div>
+    </nav>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     REFERRAL
+════════════════════════════════════════════ -->
+<div id="referralLayer" class="layer">
+    <nav class="navbar">
+        <div class="logo-nav" onclick="showLayer('dashboardLayer')">
+            <div class="logo-icon">🦅</div>
+            <div><div class="logo-text">NYOTA</div></div>
+        </div>
+        <button class="nav-btn" onclick="showLayer('dashboardLayer')">← Back</button>
+    </nav>
+    <div class="container-sm">
+        <div class="card" style="text-align:center;">
+            <h2 class="card-title">🎁 Referral Program</h2>
+            <p style="color:var(--muted);margin-bottom:20px;font-size:15px;">Earn <strong style="color:var(--green);">Ksh 500</strong> for every friend who joins and activates using your code!</p>
+
+            <div class="ref-code-box">
+                <div style="font-size:12px;color:var(--muted);margin-bottom:8px;text-transform:uppercase;letter-spacing:1px;">Your Referral Code</div>
+                <div class="ref-code" id="referralCode">NYT-0000</div>
+            </div>
+
+            <div style="font-size:13px;color:var(--muted);margin-bottom:6px;text-align:left;">Your Referral Link</div>
+            <div class="ref-link" id="referralLink">https://nyota.co.ke/join?ref=NYT-0000</div>
+
+            <div style="display:flex;gap:10px;margin-top:12px;">
+                <button class="btn-submit" onclick="copyReferral()" style="flex:1;">📋 Copy Link</button>
+                <button class="btn-submit" onclick="shareReferral()" style="flex:1;background:var(--navy);">📤 Share</button>
+            </div>
+
+            <div class="ref-stats">
+                <div class="ref-stat">
+                    <div class="ref-stat-val" id="refCount">0</div>
+                    <div class="ref-stat-label">Total Referrals</div>
+                </div>
+                <div class="ref-stat">
+                    <div class="ref-stat-val" id="refActive">0</div>
+                    <div class="ref-stat-label">Active</div>
+                </div>
+                <div class="ref-stat">
+                    <div class="ref-stat-val" id="refEarnings">Ksh 0</div>
+                    <div class="ref-stat-label">Earnings</div>
+                </div>
+            </div>
+
+            <div style="background:#f7faf8;border-radius:14px;padding:18px;margin-top:20px;text-align:left;">
+                <div style="font-family:'Sora',sans-serif;font-weight:700;margin-bottom:10px;font-size:14px;">How It Works</div>
+                <div style="font-size:13px;color:var(--muted);line-height:2;">
+                    1️⃣ Share your unique referral code or link<br>
+                    2️⃣ Friend registers and activates an account<br>
+                    3️⃣ You earn <strong style="color:var(--green);">Ksh 500</strong> instantly credited to your balance
+                </div>
+            </div>
+        </div>
+    </div>
+    <nav class="bottom-nav">
+        <div class="bottom-nav-inner">
+            <button class="bnav-btn" onclick="showLayer('dashboardLayer')"><span>🏠</span>Home</button>
+            <button class="bnav-btn" onclick="showLayer('investLayer')"><span>💰</span>Invest</button>
+            <button class="bnav-btn" onclick="showLayer('withdrawLayer')"><span>💸</span>Withdraw</button>
+            <button class="bnav-btn active" onclick="showLayer('referralLayer')"><span>🎁</span>Refer</button>
+            <button class="bnav-btn" onclick="showLayer('profileLayer')"><span>👤</span>Profile</button>
+        </div>
+    </nav>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     PROFILE
+════════════════════════════════════════════ -->
+<div id="profileLayer" class="layer">
+    <nav class="navbar">
+        <div class="logo-nav" onclick="showLayer('dashboardLayer')">
+            <div class="logo-icon">🦅</div>
+            <div><div class="logo-text">NYOTA</div></div>
+        </div>
+        <button class="nav-btn" onclick="showLayer('dashboardLayer')">← Back</button>
+    </nav>
+    <div class="container-sm">
+        <div class="card" style="text-align:center;">
+            <div class="profile-avatar" id="profileAvatar">J</div>
+            <h3 style="font-family:'Sora',sans-serif;font-size:22px;font-weight:800;" id="profileName">—</h3>
+            <div class="profile-badge" id="profileTier">✅ Verified Member</div>
+
+            <div style="margin-top:24px;text-align:left;">
+                <div class="info-row">
+                    <span class="info-label">📱 Phone</span>
+                    <span class="info-val" id="profilePhone">—</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">📧 Email</span>
+                    <span class="info-val" id="profileEmail">—</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">🪪 ID Number</span>
+                    <span class="info-val" id="profileIDNum">—</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">📦 Active Plan</span>
+                    <span class="info-val" id="profilePlan">—</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">📅 Member Since</span>
+                    <span class="info-val" id="profileSince">—</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">🔐 Last Login</span>
+                    <span class="info-val" id="profileLastLogin">—</span>
+                </div>
+            </div>
+
+            <button class="btn-submit" style="margin-top:24px;background:var(--red);" onclick="logout()">🚪 Logout</button>
+        </div>
+    </div>
+    <nav class="bottom-nav">
+        <div class="bottom-nav-inner">
+            <button class="bnav-btn" onclick="showLayer('dashboardLayer')"><span>🏠</span>Home</button>
+            <button class="bnav-btn" onclick="showLayer('investLayer')"><span>💰</span>Invest</button>
+            <button class="bnav-btn" onclick="showLayer('withdrawLayer')"><span>💸</span>Withdraw</button>
+            <button class="bnav-btn" onclick="showLayer('referralLayer')"><span>🎁</span>Refer</button>
+            <button class="bnav-btn active" onclick="showLayer('profileLayer')"><span>👤</span>Profile</button>
+        </div>
+    </nav>
+</div>
+
+<script>
+    // ── STATE ──
+    let currentUser = null;
+    let selectedPackage = null;
+    let selectedInvestPlan = null;
+    let selectedInvestRate = null;
+    let portfolioChart = null;
+
+    // ── NAVIGATION ──
+    function showLayer(id) {
+        document.querySelectorAll('.layer').forEach(l => l.classList.remove('active'));
+        document.getElementById(id).classList.add('active');
+        window.scrollTo(0, 0);
+
+        if (id === 'dashboardLayer' && currentUser) renderDashboard();
+        if (id === 'withdrawLayer' && currentUser) {
+            document.getElementById('withdrawBalance').value = `Ksh ${currentUser.balance.toLocaleString()}`;
+            document.getElementById('withdrawPhone').value = currentUser.phone || '';
+        }
+        if (id === 'referralLayer' && currentUser) renderReferrals();
+        if (id === 'profileLayer' && currentUser) renderProfile();
+    }
+
+    // ── DASHBOARD ──
+    function renderDashboard() {
+        const u = currentUser;
+        document.getElementById('userName').textContent = u.name.split(' ')[0];
+        document.getElementById('balance').textContent = `Ksh ${u.balance.toLocaleString()}`;
+        document.getElementById('totalInvested').textContent = `Ksh ${(u.totalInvested||0).toLocaleString()}`;
+
+        const planRates = { starter: 8, premium: 12, elite: 15 };
+        const rate = planRates[u.plan] || 0;
+        const returns = Math.round((u.totalInvested || 0) * rate / 100);
+        document.getElementById('totalReturns').textContent = `Ksh ${returns.toLocaleString()}`;
+        document.getElementById('totalReferrals').textContent = u.referrals || 0;
+        document.getElementById('refBonus').textContent = `Ksh ${((u.referrals||0)*500).toLocaleString()}`;
+
+        const planLabel = u.plan ? u.plan.charAt(0).toUpperCase() + u.plan.slice(1) : '—';
+        document.getElementById('dashPlan').textContent = planLabel;
+        document.getElementById('dashReturn').textContent = rate ? `${rate}% / mo` : '—';
+        document.getElementById('dashSince').textContent = u.since || '—';
+        document.getElementById('balanceChange').textContent = `↑ +${rate}% this month`;
+
+        renderChart('1M');
+        renderTransactions();
+    }
+
+    // ── CHART ──
+    function renderChart(range) {
+        ['1M','3M','6M'].forEach(r => {
+            const btn = document.getElementById(`btn${r}`);
+            if (r === range) {
+                btn.style.background = 'var(--green)'; btn.style.color = 'white'; btn.style.borderColor = 'var(--green)';
+            } else {
+                btn.style.background = 'white'; btn.style.color = 'var(--muted)'; btn.style.borderColor = 'var(--border)';
+            }
+        });
+
+        const base = currentUser.balance || 10000;
+        let labels, weeks;
+        if (range === '1M') { labels = ['Wk 1','Wk 2','Wk 3','Wk 4']; weeks = 4; }
+        else if (range === '3M') { labels = ['Jan','Feb','Mar']; weeks = 3; }
+        else { labels = ['Jan','Feb','Mar','Apr','May','Jun']; weeks = 6; }
+
+        const rate = { starter: 0.08, premium: 0.12, elite: 0.15 }[currentUser.plan] || 0.08;
+        const data = labels.map((_, i) => Math.round(base * (1 - rate + (rate / weeks) * (i + 1))));
+        data.unshift(Math.round(base * 0.88));
+        labels.unshift('Start');
+
+        const ctx = document.getElementById('portfolioChart').getContext('2d');
+        if (portfolioChart) portfolioChart.destroy();
+        portfolioChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels,
+                datasets: [{
+                    data,
+                    borderColor: '#1f7a4a',
+                    backgroundColor: 'rgba(31,122,74,0.08)',
+                    borderWidth: 2.5,
+                    pointRadius: 5,
+                    pointBackgroundColor: '#1f7a4a',
+                    fill: true,
+                    tension: 0.4
+                }]
+            },
+            options: {
+                plugins: { legend: { display: false } },
+                scales: {
+                    y: { beginAtZero: false, ticks: { callback: v => 'Ksh ' + v.toLocaleString() } },
+                    x: { grid: { display: false } }
+                }
+            }
+        });
+    }
+
+    function setChartRange(r) { renderChart(r); }
+
+    // ── TRANSACTIONS ──
+    function addTransaction(type, amount, status = 'Completed') {
+        if (!currentUser.transactions) currentUser.transactions = [];
+        currentUser.transactions.unshift({
+            date: new Date().toLocaleDateString('en-KE', { day:'2-digit', month:'short', year:'numeric' }),
+            type, amount, txid: generateTxID(), status
+        });
+        localStorage.setItem('nyotaUser', JSON.stringify(currentUser));
+    }
+
+    function renderTransactions() {
+        const tbody = document.getElementById('txTableBody');
+        const txs = currentUser.transactions;
+        if (!txs || !txs.length) {
+            tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:24px;color:var(--muted);">No transactions yet</td></tr>';
+            return;
+        }
+        tbody.innerHTML = txs.map(tx => `
+            <tr>
+                <td>${tx.date}</td>
+                <td style="font-weight:600;">${tx.type}</td>
+                <td style="font-weight:700;color:var(--navy);">Ksh ${tx.amount.toLocaleString()}</td>
+                <td style="font-size:12px;color:var(--muted);font-family:monospace;">${tx.txid}</td>
+                <td><span class="tx-status ${tx.status === 'Completed' ? 'success' : 'pending'}">● ${tx.status}</span></td>
+            </tr>
+        `).join('');
+    }
+
+    // ── REFERRALS ──
+    function renderReferrals() {
+        const code = 'NYT-' + currentUser.phone.slice(-4).toUpperCase();
+        const link = `https://nyota.co.ke/join?ref=${code}`;
+        document.getElementById('referralCode').textContent = code;
+        document.getElementById('referralLink').textContent = link;
+        document.getElementById('refCount').textContent = currentUser.referrals || 0;
+        document.getElementById('refActive').textContent = currentUser.referrals || 0;
+        document.getElementById('refEarnings').textContent = `Ksh ${((currentUser.referrals||0)*500).toLocaleString()}`;
+    }
+
+    function copyReferral() {
+        navigator.clipboard.writeText(document.getElementById('referralLink').textContent);
+        toast('✅ Referral link copied to clipboard!');
+    }
+
+    function shareReferral() {
+        const link = document.getElementById('referralLink').textContent;
+        if (navigator.share) {
+            navigator.share({ title: 'Join NYOTA', text: 'Join me on NYOTA and start investing!', url: link });
+        } else {
+            copyReferral();
+        }
+    }
+
+    // ── PROFILE ──
+    function renderProfile() {
+        const u = currentUser;
+        document.getElementById('profileName').textContent = u.name;
+        document.getElementById('profileAvatar').textContent = u.name.charAt(0).toUpperCase();
+        document.getElementById('profilePhone').textContent = u.phone;
+        document.getElementById('profileEmail').textContent = u.email;
+        document.getElementById('profileIDNum').textContent = u.idNumber || '—';
+        document.getElementById('profilePlan').textContent = u.plan ? u.plan.charAt(0).toUpperCase() + u.plan.slice(1) : '—';
+        document.getElementById('profileSince').textContent = u.since || '—';
+        document.getElementById('profileLastLogin').textContent = new Date().toLocaleDateString('en-KE', { day:'2-digit', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' });
+    }
+
+    // ── STK PUSH ──
+    function initiateSTKPush(phone, amount, purpose) {
+        const popup = document.getElementById('stkPopup');
+        document.getElementById('stkAmount').textContent = `Ksh ${amount.toLocaleString()}`;
+        document.getElementById('stkMessage').textContent = `Confirm payment of Ksh ${amount.toLocaleString()} to NYOTA ${purpose}`;
+        popup.classList.add('active');
+        return new Promise(resolve => {
+            setTimeout(() => {
+                popup.classList.remove('active');
+                resolve(true);
+            }, 4000);
+        });
+    }
+
+    // ── SIGNUP ──
+    function selectPackage(amount, el) {
+        document.querySelectorAll('#signupLayer .plan-card').forEach(c => c.classList.remove('selected'));
+        el.classList.add('selected');
+        selectedPackage = amount;
+        document.getElementById('signupPackage').value = amount;
+    }
+
+    function checkStrength(val) {
+        const fill = document.getElementById('strengthFill');
+        const label = document.getElementById('strengthLabel');
+        let strength = 0;
+        if (val.length >= 6) strength++;
+        if (val.length >= 10) strength++;
+        if (/[A-Z]/.test(val)) strength++;
+        if (/[0-9]/.test(val)) strength++;
+        if (/[^A-Za-z0-9]/.test(val)) strength++;
+        const colors = ['','#e53e3e','#dd6b20','#e6b800','#38a169','#1f7a4a'];
+        const labels = ['','Weak','Fair','Good','Strong','Very Strong'];
+        const pct = (strength / 5) * 100;
+        fill.style.width = pct + '%';
+        fill.style.background = colors[strength] || '#eee';
+        label.textContent = labels[strength] || '';
+        label.style.color = colors[strength] || 'var(--muted)';
+    }
+
+    async function handleSignup(e) {
+        e.preventDefault();
+        if (!selectedPackage) { toast('❌ Please select a registration package!', true); return false; }
+        const name = document.getElementById('signupName').value;
+        const phone = document.getElementById('signupPhone').value;
+        const email = document.getElementById('signupEmail').value;
+        const idNumber = document.getElementById('signupID').value;
+
+        await initiateSTKPush(phone, selectedPackage, 'Registration');
+
+        const bonusMap = { 1000: 12500, 2000: 25000, 5000: 50000 };
+        const planMap = { 1000: 'starter', 2000: 'premium', 5000: 'elite' };
+
+        currentUser = {
+            name, phone, email, idNumber,
+            balance: bonusMap[selectedPackage],
+            totalInvested: selectedPackage,
+            plan: planMap[selectedPackage],
+            referrals: 0,
+            since: new Date().toLocaleDateString('en-KE', { month: 'short', year: 'numeric' }),
+            transactions: []
+        };
+
+        addTransaction('Registration — ' + planMap[selectedPackage].charAt(0).toUpperCase() + planMap[selectedPackage].slice(1), selectedPackage);
+        localStorage.setItem('nyotaUser', JSON.stringify(currentUser));
+
+        toast(`🎉 Welcome, ${name.split(' ')[0]}! Account activated successfully.`);
+        setTimeout(() => showLayer('dashboardLayer'), 2000);
+        return false;
+    }
+
+    // ── LOGIN ──
+    function handleLogin(e) {
+        e.preventDefault();
+        const stored = JSON.parse(localStorage.getItem('nyotaUser'));
+        if (!stored) { toast('❌ No account found. Please register first!', true); return false; }
+        currentUser = stored;
+        toast(`✅ Welcome back, ${currentUser.name.split(' ')[0]}!`);
+        setTimeout(() => showLayer('dashboardLayer'), 1200);
+        return false;
+    }
+
+    // ── INVEST ──
+    function selectInvestPlan(plan, rate, el) {
+        document.querySelectorAll('#investLayer .plan-card').forEach(c => c.classList.remove('selected'));
+        el.classList.add('selected');
+        selectedInvestPlan = plan;
+        selectedInvestRate = rate;
+        document.getElementById('investPlan').value = plan;
+        document.getElementById('investRate').value = rate;
+        updateProjection();
+    }
+
+    function updateProjection() {
+        const amt = parseInt(document.getElementById('investAmount').value);
+        const rate = selectedInvestRate;
+        const proj = document.getElementById('investProjection');
+        if (amt && rate) {
+            proj.style.display = 'block';
+            document.getElementById('projectedReturn').textContent = `Ksh ${Math.round(amt * rate / 100).toLocaleString()} / month`;
+        }
+    }
+
+    document.getElementById('investAmount').addEventListener('input', updateProjection);
+
+    async function handleInvest(e) {
+        e.preventDefault();
+        if (!currentUser) { toast('❌ Please login first!', true); return false; }
+        if (!selectedInvestPlan) { toast('❌ Please select an investment plan!', true); return false; }
+        const amount = parseInt(document.getElementById('investAmount').value);
+
+        await initiateSTKPush(currentUser.phone, amount, 'Investment');
+
+        currentUser.balance += amount;
+        currentUser.totalInvested = (currentUser.totalInvested || 0) + amount;
+        currentUser.plan = selectedInvestPlan;
+        addTransaction(`Investment — ${selectedInvestPlan.charAt(0).toUpperCase() + selectedInvestPlan.slice(1)}`, amount);
+        localStorage.setItem('nyotaUser', JSON.stringify(currentUser));
+
+        toast(`✅ Investment of Ksh ${amount.toLocaleString()} is now active!`);
+        setTimeout(() => showLayer('dashboardLayer'), 2000);
+        return false;
+    }
+
+    // ── WITHDRAW ──
+    function handleWithdraw(e) {
+        e.preventDefault();
+        const amount = parseInt(document.getElementById('withdrawAmount').value);
+        const phone = document.getElementById('withdrawPhone').value;
+
+        if (amount < 500) { toast('❌ Minimum withdrawal is Ksh 500!', true); return false; }
+        if (!currentUser || currentUser.balance < amount) { toast('❌ Insufficient balance!', true); return false; }
+
+        currentUser.balance -= amount;
+        addTransaction('Withdrawal', amount, 'Pending');
+        localStorage.setItem('nyotaUser', JSON.stringify(currentUser));
+
+        toast(`✅ Withdrawal of Ksh ${amount.toLocaleString()} submitted. Processing within 24 hours.`);
+        setTimeout(() => showLayer('dashboardLayer'), 2000);
+        return false;
+    }
+
+    // ── NOTIFICATION ──
+    function toggleNotif() {
+        const dd = document.getElementById('notifDropdown');
+        dd.classList.toggle('open');
+        document.getElementById('notifBadge').style.display = 'none';
+    }
+    document.addEventListener('click', e => {
+        if (!e.target.closest('.notif-wrap')) document.getElementById('notifDropdown').classList.remove('open');
+    });
+
+    // ── LOGOUT ──
+    function logout() {
+        currentUser = null;
+        toast('👋 Asante! See you soon.');
+        setTimeout(() => showLayer('welcomeLayer'), 1200);
+    }
+
+    // ── TOAST ──
+    function toast(msg, isError = false) {
+        const t = document.getElementById('toast');
+        t.textContent = msg;
+        t.classList.remove('show', 'error');
+        if (isError) t.classList.add('error');
+        void t.offsetWidth;
+        t.classList.add('show');
+        setTimeout(() => t.classList.remove('show'), 5000);
+    }
+
+    // ── UTILS ──
+    function generateTxID() {
+        return 'QH' + Math.random().toString(36).substr(2, 8).toUpperCase();
+    }
+
+    // Auto-login if session exists
+    const saved = localStorage.getItem('nyotaUser');
+    if (saved) {
+        currentUser = JSON.parse(saved);
+        // Stay on welcome, user can login
+    }
+
+    console.log('🦅 NYOTA Platform — Professional Edition');
+    console.log('🇰🇪 Kuza, Imarisha, Endeza Vijana!');
+</script>
+</body>
+</html>
